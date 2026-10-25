@@ -1,89 +1,84 @@
 # BookLeaf Author Support & Communication Portal
 
-A full-stack technical-assignment implementation using React, Vite, Tailwind CSS, Express, MongoDB/Mongoose, JWT authentication, and optional OpenAI-assisted ticket classification and reply drafting.
+## Project Overview
 
-> This assignment is confidential. Keep the repository private and do not publish the assignment or solution publicly.
+The BookLeaf Author Support Portal is a full-stack web application that helps authors submit support requests and enables the operations team to manage tickets, prioritise issues, and respond consistently. It includes separate author and admin experiences with role-based access control.
 
-## Features
-- Author login and account-scoped book/ticket data.
-- Book catalogue with publication state and royalty fields, including production-stage titles and zero-payout cases.
-- Ticket creation, status lifecycle, author/admin replies, admin-only internal notes, assignment, and 10–15 second polling for near-real-time updates.
-- AI ticket classification and priority scoring with a deterministic rules fallback when no API key is configured or the provider is unavailable.
-- AI response drafting grounded in the assignment's BookLeaf knowledge base, with editable drafts before sending.
-- Input validation, consistent JSON errors, JWT auth, role-based access, rate limiting, Helmet security headers, request body limits, and database indexes.
-- Responsive layouts for mobile, tablet, and desktop.
+## Live Demo
 
-## Requirements
-- Node.js 20+
-- MongoDB Community Server running locally, or a MongoDB Atlas connection string
-- npm
-- Optional OpenAI API key for LLM-assisted classification/drafting
+- **Frontend:** https://bookleaf-support-portal-frontend.onrender.com
+- **Backend health:** https://bookleaf-support-portal-n3a7.onrender.com/api/health
+- **Source code:** https://github.com/SDE-Tarun/bookleaf-support-portal
 
-## Local setup
-1. Start MongoDB locally or create an Atlas database.
-2. In `backend`, copy `.env.example` to `.env`; set `MONGODB_URI` and a random `JWT_SECRET` (at least 32 characters). Never commit `.env`.
-3. Install and seed the API:
-   ```bash
-   cd backend
-   npm install
-   npm run seed
-   npm run dev
-   ```
-4. In a second terminal, configure and start the frontend:
-   ```bash
-   cd frontend
-   cp .env.example .env
-   npm install
-   npm run dev
-   ```
-5. Open the URL printed by Vite, normally `http://localhost:5173`. API health check: `http://localhost:5000/api/health`.
+## Demo Credentials
 
-## Seeded demo credentials
-- Admin: `admin@bookleaf.test` / `Admin@123`
-- Author: `priya.sharma@email.com` / `Author@123`
-- All seeded author accounts use `Author@123` for local evaluation.
+**Admin**
+- Email: `admin@bookleaf.test`
+- Password: `Admin@123`
 
-The seed script resets the `Author` collection each time it runs. Do not run it against a production database containing real user data.
+**Author**
+- Email: `priya.sharma@email.com`
+- Password: `Author@123`
 
-## AI design
-- Model: `gpt-4o-mini` by default, configurable through `OPENAI_MODEL`.
-- API key is read only by the backend from `OPENAI_API_KEY`; it is never sent to the browser.
-- Classification uses a short ticket subject/description input and constrained JSON output. Category and priority are validated against server-side enums.
-- Drafting passes only the ticket fields needed for a response plus a compact knowledge-base policy summary, not the full conversation history or entire database.
-- Provider calls use a timeout and limited retry. If the key is absent, the provider fails, or rate limits are encountered, tickets still create successfully using rule-based classification and response templates.
-- AI output is a draft/advisory result. Admins can change category/priority and must review/edit replies before sending.
+These are seeded demonstration accounts. The repository should remain private as required by the assignment.
 
-## API overview
-All API responses use `{ "success": true, "data": ... }` or `{ "success": false, "error": { "message": ... } }`. Protected endpoints require `Authorization: Bearer <token>`.
+## Technology Stack
 
-| Method | Endpoint | Access | Purpose |
-|---|---|---|---|
-| GET | `/api/health` | Public | Health check |
-| POST | `/api/auth/login` | Public | Email/password login |
-| GET | `/api/auth/me` | Signed-in | Current account |
-| GET | `/api/books/me` | Author | Own books |
-| GET | `/api/tickets/me` | Author | Own tickets |
-| POST | `/api/tickets` | Author | Create ticket; AI classification runs best-effort |
-| GET | `/api/tickets` | Admin | Ticket queue; filters: `status`, `category`, `priority`, `from`, `to`, `search`, `page`, `limit` |
-| GET | `/api/tickets/:id` | Owner or admin | Ticket detail |
-| POST | `/api/tickets/:id/messages` | Owner or admin | Add author-visible message |
-| PATCH | `/api/tickets/:id` | Admin | Update status/category/priority |
-| POST | `/api/tickets/:id/notes` | Admin | Add private internal note |
-| POST | `/api/tickets/:id/assign` | Admin | Assign ticket to current admin |
-| POST | `/api/tickets/:id/ai-draft` | Admin | Generate a reply draft |
-| GET | `/api/admin/stats` | Admin | Queue metrics |
+- **Frontend:** React, Vite, Tailwind CSS
+- **Backend:** Node.js, Express.js
+- **Database:** MongoDB Atlas, Mongoose
+- **Authentication:** JWT and role-based access control
+- **AI assistance:** AI classification and response-drafting workflow with rule-based/template fallback
+- **Deployment:** Render
 
-## Testing
-- Backend rule classifier tests: `cd backend && npm test`
-- API checks with Postman: log in, copy `data.token`, set Bearer Token, then test the routes above.
-- Frontend production build: `cd frontend && npm run build`
-- Verify author isolation by signing in as one author and trying to fetch another author's ticket ID. The API must reject it.
+## Key Features
 
-## Render deployment
-Deploy the backend and frontend as separate Render Web Services / Static Site. For the backend use root directory `backend`, build command `npm install`, start command `npm start`. Set `MONGODB_URI`, `JWT_SECRET`, `CLIENT_ORIGIN`, `OPENAI_API_KEY` (optional), `OPENAI_MODEL`, and `NODE_ENV=production`. For the frontend use root directory `frontend`, build command `npm install && npm run build`, publish directory `dist`, and set `VITE_API_URL` to the deployed backend URL ending in `/api`. Redeploy frontend after setting its environment variable. Seed the production database only once, intentionally, before evaluation; never use a local development URI in production.
+- Author login and author-specific book and ticket views
+- Support ticket creation with book selection
+- Ticket categorisation and priority assignment
+- Admin ticket queue, filters, assignment and status management
+- Admin replies and private internal notes
+- AI-assisted response drafts requiring human review
+- Near-real-time author ticket updates through polling
+- Input validation, access-control checks and consistent API errors
 
-## Known limitations / production follow-ups
-- Attachments are UI-only as allowed by the assignment; no file is uploaded or stored.
-- Near-real-time updates use polling rather than WebSockets/SSE.
-- Demo login passwords are intentionally simple for local evaluation. Replace demo credentials, add password reset/invitation flows, audit logging, and stronger account lifecycle controls before real production use.
-- Add integration tests for MongoDB-backed auth/ticket flows, pagination UX, and a curated Postman collection before final hand-off.
+## Architecture Decisions
+
+The application separates the React frontend, Express REST API, and MongoDB persistence layer. Controllers handle request workflows, middleware handles authentication and authorisation, and services encapsulate classification and response-drafting logic. This separation keeps the code easier to maintain and test.
+
+JWT authentication protects private routes. Authors can access only their own records and tickets, while admin-only operations are protected by role checks. Polling was chosen for near-real-time updates because it is straightforward to implement and sufficient for this assignment’s scale.
+
+## AI Integration and Reliability
+
+Ticket classification and response drafting are designed to assist support staff rather than replace their judgement. Response drafts use BookLeaf policy context and a consistent support tone. Drafts should be reviewed and sent by an admin; they should not be treated as authoritative without verification.
+
+When a live AI provider is not configured or unavailable, the application can fall back to rule-based classification and template responses so the support workflow remains usable. The current demo uses the fallback path when no provider API key is configured. Provider credentials belong in backend environment variables, never in frontend code.
+
+## Local Setup
+
+1. Install Node.js and MongoDB, or configure a MongoDB Atlas database.
+2. Install backend dependencies from `backend/` using `npm install`.
+3. Configure the backend `.env` using `backend/.env.example`.
+4. Run the seed script only against a development or intended demo database: `npm run seed`.
+5. Start the backend using the command defined in `backend/package.json`.
+6. Install frontend dependencies from `frontend/` using `npm install`.
+7. Configure `VITE_API_URL` to point to the backend API base URL.
+8. Start the frontend using `npm run dev`.
+
+Do not run the seed script against a database containing data you need to preserve: it clears ticket and author records before inserting demo data.
+
+## API Documentation
+
+See [`docs/API.md`](docs/API.md) for endpoint details and authentication requirements. See [`docs/APPROACH.md`](docs/APPROACH.md) for the implementation approach and trade-offs.
+
+## Tests
+
+The backend classifier tests and frontend production build have passed. Manual testing has also verified author/admin login, ticket creation, admin queue visibility, status and priority updates, assignment, replies, and role-based access restrictions.
+
+## Known Limitations and Future Improvements
+
+- File attachment upload is UI-only.
+- Live AI drafting requires provider credentials; the deployed demo currently uses fallback behaviour when no key is configured.
+- Polling is used instead of WebSockets or Server-Sent Events.
+- Production hardening could include password-management flows, audit logging, monitoring, automated end-to-end tests, and stricter database network access.
+
