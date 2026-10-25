@@ -1,0 +1,16 @@
+import { Router } from 'express';
+import { login,me } from '../controllers/authController.js';
+import { myBooks } from '../controllers/bookController.js';
+import * as tickets from '../controllers/ticketController.js';
+import { authenticate,requireRole } from '../middleware/auth.js';
+import { loginSchema,createTicketSchema,replySchema,updateTicketSchema,noteSchema } from '../validators/schemas.js';
+import { AppError } from '../utils/AppError.js';
+const router=Router();
+const validate=(schema)=>(req,_res,next)=>{try{req.validatedBody=schema.parse(req.body);next()}catch(e){next(e)}};
+router.get('/health',(_req,res)=>res.json({success:true,data:{status:'ok',timestamp:new Date().toISOString()}}));
+router.post('/auth/login',validate(loginSchema),login);router.get('/auth/me',authenticate,me);
+router.get('/books/me',authenticate,requireRole('author'),myBooks);
+router.get('/tickets/me',authenticate,requireRole('author'),tickets.myTickets);router.post('/tickets',authenticate,requireRole('author'),validate(createTicketSchema),tickets.createTicket);
+router.get('/tickets',authenticate,requireRole('admin'),tickets.adminTickets);router.get('/tickets/:id',authenticate,tickets.getTicket);router.post('/tickets/:id/messages',authenticate,validate(replySchema),tickets.replyTicket);
+router.patch('/tickets/:id',authenticate,requireRole('admin'),validate(updateTicketSchema),tickets.updateTicket);router.post('/tickets/:id/notes',authenticate,requireRole('admin'),validate(noteSchema),tickets.addNote);router.post('/tickets/:id/assign',authenticate,requireRole('admin'),tickets.assignToMe);router.post('/tickets/:id/ai-draft',authenticate,requireRole('admin'),tickets.generateDraft);router.get('/admin/stats',authenticate,requireRole('admin'),tickets.adminStats);
+export default router;
